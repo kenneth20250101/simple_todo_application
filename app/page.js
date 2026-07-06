@@ -38,7 +38,7 @@ export default function Home() {
   return (
     <main className="page">
       <div className="todo-app">
-        <h1 className="todo-app__title">📝 ToDo App</h1>
+        <h1 className="todo-app__title">📝 ToDo App 2026</h1>
         <p className="todo-app__subtitle">Stay organized, one task at a time.</p>
 
         <div className="todo-card">
