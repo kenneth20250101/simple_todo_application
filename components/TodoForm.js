@@ -4,11 +4,14 @@ import { useState } from 'react';
 
 // TodoForm handles the input field and "Add" button.
 // It keeps its own local state for the text being typed,
-// and calls onAdd(text) from the parent when the user submits.
+// and calls onAdd(title) from the parent when the user submits.
+// onAdd is async here because it talks to Supabase, so we disable
+// the button while the request is in flight to avoid double-submits.
 export default function TodoForm({ onAdd }) {
   const [text, setText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     const trimmed = text.trim();
@@ -16,7 +19,9 @@ export default function TodoForm({ onAdd }) {
       return; // ignore empty submissions
     }
 
-    onAdd(trimmed);
+    setSubmitting(true);
+    await onAdd(trimmed);
+    setSubmitting(false);
     setText(''); // clear the input after adding
   }
 
@@ -29,9 +34,14 @@ export default function TodoForm({ onAdd }) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         aria-label="New task"
+        disabled={submitting}
       />
-      <button type="submit" className="btn btn-primary" disabled={text.trim() === ''}>
-        Add
+      <button
+        type="submit"
+        className="btn btn-primary"
+        disabled={text.trim() === '' || submitting}
+      >
+        {submitting ? 'Adding…' : 'Add'}
       </button>
     </form>
   );

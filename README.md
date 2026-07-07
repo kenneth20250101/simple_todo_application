@@ -1,96 +1,96 @@
-# ToDo App (Next.js, App Router, JavaScript)
+# ToDo App — Stage 1 Advanced (Next.js + Supabase Auth + Database)
 
-A simple, beginner-friendly ToDo app built to help you learn:
-- React **components** (breaking UI into small reusable pieces)
-- React **state** (`useState`)
-- **Event handling** (form submit, click, checkbox change)
-- Basic **deployment** to Vercel
+This upgrades the basic ToDo App with:
+- Email + password **authentication** (sign up / sign in / sign out) via Supabase Auth
+- A real **database** table (`todos`) via Supabase
+- **Per-user data isolation** using `user_id` + Row Level Security (RLS)
 
-No database, no login, no TypeScript, no Tailwind — just plain JavaScript
-and plain CSS, so it's easy to read and modify.
+Still: no TypeScript, no Tailwind — plain JavaScript and plain CSS.
 
-## Project structure
+No group / shared-list feature yet — that's Stage 2.
+
+## What's new compared to the basic version
+
+| Concept | Where it lives |
+|---|---|
+| Supabase client | `lib/supabaseClient.js` |
+| Sign in / sign up | `components/AuthForm.js` |
+| Sign out + current user email | `components/UserBar.js` |
+| Database reads/writes (CRUD) | `components/TodoApp.js` |
+| Auth session management | `app/page.js` |
+
+See **`docs/database_implement.md`** for a full explanation of every
+file, why `user_id` and RLS matter, and which environment variables
+you need. See **`docs/Database_init.md`** for the SQL to set up your
+Supabase table.
+
+## 1. Set up Supabase
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Open **SQL Editor** and run the SQL in `docs/Database_init.md`.
+   This creates the `todos` table, enables Row Level Security, and
+   adds the select/insert/update/delete policies.
+3. Go to **Project Settings → API** and copy your **Project URL** and
+   **anon/public key**.
+
+## 2. Configure environment variables locally
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` and fill in the two values from step 1:
 
 ```
-todo-app/
-├── app/
-│   ├── layout.js       # Root layout, wraps every page, loads global CSS
-│   ├── page.js         # Main page: holds the todos state, ties everything together
-│   └── globals.css     # All styling (colors, layout, buttons, responsive rules)
-├── components/
-│   ├── TodoForm.js      # Input field + "Add" button
-│   ├── TodoList.js      # Renders the list of tasks, or an empty-state message
-│   ├── TodoItem.js      # A single task row (checkbox, text, delete button)
-│   └── TodoStats.js     # Shows total task count and completed count
-├── package.json         # Project dependencies and scripts
-├── next.config.js       # Next.js configuration (default settings)
-└── .gitignore           # Files/folders git should ignore (node_modules, .next, etc.)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
-## How the pieces fit together
+## 3. Install dependencies and run locally
 
-1. **`app/page.js`** is a client component (`'use client'`) that owns the
-   list of todos in state: `const [todos, setTodos] = useState([])`.
-   It defines three functions — `handleAdd`, `handleToggle`, `handleDelete`
-   — and passes them down as props to the child components.
-2. **`TodoForm`** manages its own local state for the text being typed.
-   When the form is submitted, it calls `onAdd(text)`, which was passed
-   down from `page.js`.
-3. **`TodoStats`** simply reads the `todos` array it's given and computes
-   the total count and completed count — it has no state of its own.
-4. **`TodoList`** decides whether to show the empty-state message or map
-   over `todos` and render a `TodoItem` for each one.
-5. **`TodoItem`** renders one task. Clicking the checkbox or the text
-   calls `onToggle(id)`; clicking "Delete" calls `onDelete(id)`.
-
-This is the standard React pattern: **state lives in one place (the
-parent), and data + functions flow down through props.**
-
-## Running the project locally
-
-Dependencies were **not** installed for you, so the first thing you need
-to do is install them:
+Dependencies were **not** installed for you — install them first:
 
 ```bash
 npm install
-```
-
-Then start the development server:
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser. The
-page will hot-reload as you edit files.
+Open [http://localhost:3000](http://localhost:3000). You should see a
+sign in / sign up card. Create an account, sign in, and start adding
+todos.
 
-## Deploying to Vercel
+> Note: depending on your Supabase project's Auth settings, email
+> confirmation may be required after sign up before you can sign in.
+> You can turn this off for local testing under **Authentication →
+> Providers → Email → Confirm email**.
 
-You have two easy options:
+## 4. Deploy to Vercel
 
-**Option A — Vercel CLI**
-```bash
-npm install -g vercel
-vercel
-```
-Follow the prompts (you can accept all the defaults). Vercel will build
-and deploy the app and give you a live URL.
+1. Push this project to a GitHub repository.
+2. Go to [vercel.com](https://vercel.com) → **New Project** → import
+   your repository.
+3. Before deploying, add the environment variables under **Settings →
+   Environment Variables**:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Click **Deploy**. Vercel runs `npm install` and `npm run build` for
+   you automatically.
 
-**Option B — GitHub + Vercel dashboard**
-1. Push this project to a new GitHub repository.
-2. Go to [vercel.com](https://vercel.com), click "New Project", and
-   import your repository.
-3. Vercel automatically detects it's a Next.js app — no configuration
-   needed. Click "Deploy".
+## mXGINlntt9r9Px1u
+## Stage 1 acceptance criteria
 
-Either way, Vercel runs `npm install` and `npm run build` for you, so you
-don't need to build anything locally first.
+- [x] Users can sign up
+- [x] Users can sign in
+- [x] Users can sign out
+- [x] The ToDo App is only visible after signing in
+- [x] Todos are saved to Supabase
+- [x] Todos still exist after refreshing
+- [x] Different accounts cannot see each other's todos
+- [x] The app can be deployed correctly to Vercel
 
-## Ideas for extending this app (next steps for students)
+## What's next (Stage 2 preview)
 
-- Persist todos in `localStorage` so they survive a page refresh.
-- Add an "edit task" feature (double-click to rename).
-- Add filters: "All / Active / Completed".
-- Add a "Clear completed" button.
-- Once comfortable, connect a real database (e.g. with a backend API
-  route or a service like Supabase) for a "stage two" version of the app.
+Stage 2 will introduce shared/group todo lists (a `groups` table and a
+`group_id` column). Nothing in this stage needs to change to support
+that later — it's intentionally left out for now so the auth + RLS
+fundamentals stay easy to follow.

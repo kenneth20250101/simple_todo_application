@@ -1,51 +1,62 @@
 'use client';
 
-import { useState } from 'react';
-import TodoForm from '../components/TodoForm';
-import TodoList from '../components/TodoList';
-import TodoStats from '../components/TodoStats';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import AuthForm from '../components/AuthForm';
+import TodoApp from '../components/TodoApp';
+import UserBar from '../components/UserBar';
 
-// This is the top-level page component. It owns the "source of truth"
-// state (the todos array) and passes data + handler functions down to
-// the smaller components (TodoForm, TodoStats, TodoList/TodoItem).
+// Home is the only route in this app. It is responsible for:
+// 1. Checking whether a user is currently signed in (on load)
+// 2. Listening for auth changes (sign in / sign up / sign out)
+// 3. Rendering AuthForm when signed out, or UserBar + TodoApp when signed in
 export default function Home() {
-  const [todos, setTodos] = useState([]);
+  // `undefined` = "we haven't checked yet" (show a loading state)
+  // `null`      = "checked, and nobody is signed in"
+  // an object   = "the current session"
+  const [session, setSession] = useState(undefined);
 
-  // Add a new todo to the top of the list.
-  function handleAdd(text) {
-    const newTodo = {
-      id: Date.now(), // simple unique id, good enough without a database
-      text,
-      completed: false,
-    };
-    setTodos((prev) => [newTodo, ...prev]);
-  }
+  useEffect(() => {
+    // Check for an existing session when the app first loads
+    // (e.g. the user refreshed the page but was already signed in).
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+    });
 
-  // Flip a todo's completed state by id.
-  function handleToggle(id) {
-    setTodos((prev) =>
-      prev.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
+    // Subscribe to future auth changes: sign in, sign up, sign out,
+    // and token refreshes are all reported here.
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession);
+      }
     );
-  }
 
-  // Remove a todo by id.
-  function handleDelete(id) {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
-  }
+    // Clean up the subscription when this component unmounts.
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const user = session?.user;
 
   return (
     <main className="page">
       <div className="todo-app">
-        <h1 className="todo-app__title">📝 ToDo App 2026</h1>
-        <p className="todo-app__subtitle">Stay organized, one task at a time.</p>
+        <h1 className="todo-app__title">📝 ToDo App</h1>
+        <p className="todo-app__subtitle">Stage 1 Advanced — with accounts &amp; a database.</p>
 
-        <div className="todo-card">
-          <TodoForm onAdd={handleAdd} />
-          <TodoStats todos={todos} />
-          <TodoList todos={todos} onToggle={handleToggle} onDelete={handleDelete} />
-        </div>
+        {session === undefined && (
+          <p className="todo-empty">Checking your session…</p>
+        )}
+
+        {session === null && <AuthForm />}
+
+        {user && (
+          <>
+            <UserBar user={user} />
+            <TodoApp user={user} />
+          </>
+        )}
       </div>
     </main>
   );

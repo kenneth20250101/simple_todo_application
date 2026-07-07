@@ -3,7 +3,7 @@
 // TodoStats shows a small summary bar: total tasks and how many are completed.
 export default function TodoStats({ todos }) {
   const total = todos.length;
-  const completed = todos.filter((todo) => todo.completed).length;
+  const completed = todos.filter((todo) => todo.is_complete).length;
 
   return (
     <div className="todo-stats">
